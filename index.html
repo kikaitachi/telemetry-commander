@@ -108,9 +108,15 @@ const createStringItem = (client, id, name) => {
 
 const handleAddMessage = (client, dataView) => {
   const id = getUint32(1);
-  switch (dataView.getUint8(5)) {
+  const dataType = dataView.getUint8(5);
+  const nameLength = getUint32(6);
+  let name = '';
+  for (let i = 0; i < len; i++) {
+    name += String.fromCharCode(this.dataView.getInt8(10 + i));
+  }
+  switch (dataType) {
     case DATA_STRING:
-      createStringItem(client);
+      createStringItem(client, id, name);
       break;
     case DATA_DOUBLE:
       // TODO: implement
