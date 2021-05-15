@@ -21,6 +21,95 @@ body {
 </head>
 <body>
 <script>
+// Connection auto-detection parameters
+const port = 3001;
+const path = '/tc'
+const subnets = [
+  '192.168.1.',
+  '192.168.8.'
+];
+const minIp = 2;
+const maxIp = 32;
+const maxConnections = 1; // Once this number is reached auto-connect will stop
+let currentSubnetIndex = 0;
+let currentIp = minIp;
+
+// Message types
+const MSG_TYPE_ADD = 0;
+const MSG_TYPE_UPDATE = 1;
+const MSG_TYPE_DELETE = 2;
+
+// Data types
+const DATA_STRING = 0;
+const DATA_DOUBLE = 1;
+const DATA_CHOICE = 2;
+const DATA_SHORTCUT = 3;
+const DATA_LOG = 4;
+
+const connections = new Map();
+const pendingMessages = new Set();
+
+const tryConnect = () => {
+  if (connections.size >= maxConnections) {
+    return setTimeout(tryConnect, 3000);
+  }
+  const url = 'ws://' + subnets[currentSubnetIndex] + currentIp + ':' + port + path;
+  if (!connections.has(url)) {
+    const socket = new WebSocket(url);
+    socket.onopen = (event) => {
+      console.log('WebSocket opened');
+      connections.set(url, {
+        socket: socket,
+        items: [
+          {
+            id: 0,
+            name: 'URL',
+            value: url
+          }
+        ]
+      });
+    };
+    socket.onclose = (event) => {
+      console.log('WebSocket closed with code ' + event.code + ' and reason: ' + event.reason);
+      connections.delete(url);
+    }
+    socket.onerror = (event) => {
+      console.log('WebSocket error: ', event);
+    }
+    socket.onmessage = (event) => {
+      console.log('WebSocket message: ', event);
+      const message = event.data.arrayBuffer();
+      pendingMessages.add(message);
+      Promise.all(pendingMessages).then((values) => {
+        pendingMessages.delete(message);
+        handleMessage(new DataView(values[values.length - 1]));
+      });
+    }
+  }
+  if (currentIp == maxIp) {
+    currentIp = minIp;
+    if (currentSubnetIndex == subnets.length - 1) {
+      currentSubnetIndex = 0;
+    } else {
+      currentSubnetIndex++;
+    }
+  } else {
+    currentIp++;
+  }
+  setTimeout(tryConnect, 100);
+}
+
+const handleMessage = (dataView) => {
+  switch (dataView.getInt8(0)) {
+    case MSG_TYPE_ADD:
+      break;
+    case MSG_TYPE_UPDATE:
+      break;
+    case MSG_TYPE_DELETE:
+      break;
+  }
+}
+
 const addItem = (id, name, content) => {
   const container = document.createElement("div");
   container.className = 'item';
@@ -34,6 +123,8 @@ const addItem = (id, name, content) => {
 for (let i = 0; i < 45; i++) {
   addItem(i, "Test item " + i, null);
 }
+
+tryConnect();
 </script>
 </body>
 </html>
