@@ -85,7 +85,7 @@ const tryConnect = () => {
       pendingMessages.add(message);
       Promise.all(pendingMessages).then((values) => {
         pendingMessages.delete(message);
-        handleMessage(new DataView(values[values.length - 1]));
+        handleMessage(connections.get(url), new DataView(values[values.length - 1]));
       });
     }
   }
@@ -102,15 +102,15 @@ const tryConnect = () => {
   setTimeout(tryConnect, 100);
 };
 
-const createStringItem = () => {
-  // TODO: implement
+const createStringItem = (client, id, name) => {
+  addItem(id, name, null);
 };
 
-const handleAddMessage = (dataView) => {
+const handleAddMessage = (client, dataView) => {
   const id = getUint32(1);
   switch (dataView.getUint8(5)) {
     case DATA_STRING:
-      createStringItem();
+      createStringItem(client);
       break;
     case DATA_DOUBLE:
       // TODO: implement
@@ -127,26 +127,26 @@ const handleAddMessage = (dataView) => {
   }
 };
 
-const handleUpdateMessage = (dataView) => {
+const handleUpdateMessage = (client, dataView) => {
   const id = getUint32(1);
   // TODO: implement
 };
 
-const handleDeleteMessage = (dataView) => {
+const handleDeleteMessage = (client, dataView) => {
   const id = getUint32(1);
   // TODO: implement
 };
 
-const handleMessage = (dataView) => {
+const handleMessage = (client, dataView) => {
   switch (dataView.getUint8(0)) {
     case MSG_TYPE_ADD:
-      handleAddMessage(dataView);
+      handleAddMessage(client, dataView);
       break;
     case MSG_TYPE_UPDATE:
-      handleUpdateMessage(dataView);
+      handleUpdateMessage(client, dataView);
       break;
     case MSG_TYPE_DELETE:
-      handleUpdateMessage(dataView);
+      handleUpdateMessage(client, dataView);
       break;
   }
 };
