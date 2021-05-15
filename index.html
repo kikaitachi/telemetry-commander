@@ -77,7 +77,10 @@ const tryConnect = () => {
       console.log('WebSocket error: ', event);
     }
     socket.onmessage = (event) => {
-      console.log('WebSocket message: ', event);
+      // Although messages are received in order,
+      // DataView can't be created synchroniously.
+      // Magic bellow ensures that messages are
+      // processed in order they are send.
       const message = event.data.arrayBuffer();
       pendingMessages.add(message);
       Promise.all(pendingMessages).then((values) => {
@@ -97,18 +100,56 @@ const tryConnect = () => {
     currentIp++;
   }
   setTimeout(tryConnect, 100);
-}
+};
 
-const handleMessage = (dataView) => {
-  switch (dataView.getInt8(0)) {
-    case MSG_TYPE_ADD:
+const createStringItem = () => {
+  // TODO: implement
+};
+
+const handleAddMessage = (dataView) => {
+  const id = getUint32(1);
+  switch (dataView.getUint8(5)) {
+    case DATA_STRING:
+      createStringItem();
       break;
-    case MSG_TYPE_UPDATE:
+    case DATA_DOUBLE:
+      // TODO: implement
       break;
-    case MSG_TYPE_DELETE:
+    case DATA_CHOICE:
+      // TODO: implement
+      break;
+    case DATA_SHORTCUT:
+      // TODO: implement
+      break;
+    case DATA_LOG:
+      // TODO: implement
       break;
   }
-}
+};
+
+const handleUpdateMessage = (dataView) => {
+  const id = getUint32(1);
+  // TODO: implement
+};
+
+const handleDeleteMessage = (dataView) => {
+  const id = getUint32(1);
+  // TODO: implement
+};
+
+const handleMessage = (dataView) => {
+  switch (dataView.getUint8(0)) {
+    case MSG_TYPE_ADD:
+      handleAddMessage(dataView);
+      break;
+    case MSG_TYPE_UPDATE:
+      handleUpdateMessage(dataView);
+      break;
+    case MSG_TYPE_DELETE:
+      handleUpdateMessage(dataView);
+      break;
+  }
+};
 
 const addItem = (id, name, content) => {
   const container = document.createElement("div");
